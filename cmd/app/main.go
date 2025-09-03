@@ -39,8 +39,8 @@ func main() {
 	userService := service.NewUserService(userRepo)
 	router := httpdelivery.NewRouter(userService)
 
-	addr := os.Getenv("DOMAIN") + ":" + os.Getenv("PORT")
-	log.Printf("Server started at %s", addr)
+	addr := os.Getenv("HOST") + ":" + os.Getenv("HTTP_PORT")
+	log.Printf("Chadder-Net Backend %s\nServer started at %s", os.Getenv("VERSION"), addr)
 	if err := http.ListenAndServe(addr, router); err != nil {
 		log.Fatal(err)
 	}
