@@ -49,3 +49,27 @@ func (s *UserService) Register(req *httpdto.CreateUserRequest) (int64, error) {
 
 	return s.repo.Create(&user)
 }
+
+func (s *UserService) GetByID(id int64) (*entity.User, error) {
+	user, err := s.repo.GetByID(id)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, ErrUserNotFound
+	}
+	return user, nil
+}
+
+func (s *UserService) GetByUsername(username string) (*entity.User, error) {
+	user, err := s.repo.GetByUsername(username)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, ErrUserNotFound
+	}
+	return user, nil
+}
+
+func (s *UserService) Update()

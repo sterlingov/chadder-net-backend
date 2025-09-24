@@ -37,7 +37,9 @@ func main() {
 
 	userRepo := postgres.NewUserRepo(db)
 	userService := service.NewUserService(userRepo)
-	router := httpdelivery.NewRouter(userService)
+
+	routerServices := httpdelivery.Services{User: userService}
+	router := httpdelivery.NewRouter(&routerServices)
 
 	addr := os.Getenv("HOST") + ":" + os.Getenv("HTTP_PORT")
 	log.Printf("Chadder-Net Backend %s\nServer started at %s", os.Getenv("VERSION"), addr)

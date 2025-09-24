@@ -16,3 +16,12 @@ type UserResponse struct {
 	Avatar    string `json:"avatar,omitempty"`
 	CreatedAt string `json:"created_at"`
 }
+
+type UpdateUserRequest struct {
+	Username *string
+	Name     *string
+	Email    *string
+	Bio      *string
+	Password *string
+	Avatar   *string
+}

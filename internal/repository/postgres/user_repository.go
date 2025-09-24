@@ -46,14 +46,14 @@ func (r *userRepo) Create(user *entity.User) (int64, error) {
 	return id, nil
 }
 
-func (r *userRepo) GetByID(id int64) (*entity.User, error) {
-	query := "SELECT (id, username, name, bio, created_at, avatar) FROM users WHERE id = $1"
+func (r *userRepo) getByField(field string, value any) (*entity.User, error) {
+	query := fmt.Sprintf("SELECT (id, username, name, bio, created_at, avatar) FROM users WHERE %s = $1", field)
 
 	user := &entity.User{}
 	var bio sql.NullString
 	var avatar sql.NullString
 
-	err := r.db.QueryRow(query, id).Scan(
+	err := r.db.QueryRow(query, value).Scan(
 		&user.ID,
 		&user.Username,
 		&user.Name,
@@ -70,7 +70,12 @@ func (r *userRepo) GetByID(id int64) (*entity.User, error) {
 	return user, nil
 }
 
-func (r *userRepo) GetByUsername(username string) (*entity.User, error) {
-	//Затычка
-	return &entity.User{}, nil
+func (r *userRepo) GetByID(id int64) (*entity.User, error) {
+	return r.getByField("id", id)
 }
+
+func (r *userRepo) GetByUsername(username string) (*entity.User, error) {
+	return r.getByField("username", username)
+}
+
+func (r *userRepo) Update(user *entity.User) (*entity.User, error)
