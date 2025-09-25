@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"time"
 
 	httpdto "github.com/sterlingov/chadder-net-backend/internal/delivery/http/dto"
@@ -50,26 +51,76 @@ func (s *UserService) Register(req *httpdto.CreateUserRequest) (int64, error) {
 	return s.repo.Create(&user)
 }
 
-func (s *UserService) GetByID(id int64) (*entity.User, error) {
+func userToUserResponse(user *entity.User) *httpdto.UserResponse {
+	userResp := httpdto.UserResponse{}
+	userResp.ID = user.ID
+	userResp.Name = user.Name
+	userResp.Username = user.Username
+	userResp.Bio = user.Bio
+	userResp.Avatar = user.Avatar
+	userResp.CreatedAt = user.CreatedAt.Format(time.RFC3339)
+	return &userResp
+}
+
+func (s *UserService) GetByID(id int64) (*httpdto.UserResponse, error) {
 	user, err := s.repo.GetByID(id)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return nil, ErrUserNotFound
+		}
 		return nil, err
 	}
-	if user == nil {
-		return nil, ErrUserNotFound
-	}
-	return user, nil
+	return userToUserResponse(user), nil
 }
 
-func (s *UserService) GetByUsername(username string) (*entity.User, error) {
+func (s *UserService) GetByUsername(username string) (*httpdto.UserResponse, error) {
 	user, err := s.repo.GetByUsername(username)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+	return userToUserResponse(user), nil
+}
+
+func (s *UserService) Update(userID int64, req *httpdto.UpdateUserRequest) (*httpdto.UserResponse, error) {
+	user, err := s.repo.GetByID(userID)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	if req.Name != nil {
+		user.Name = *req.Name
+	}
+	if req.Email != nil {
+		user.Email = *req.Email
+	}
+	if req.Username != nil {
+		user.Username = *req.Username
+	}
+	if req.Bio != nil {
+		user.Bio = *req.Bio
+	}
+	if req.Avatar != nil {
+		user.Avatar = *req.Avatar
+	}
+	if req.Password != nil {
+		var hash string
+		hash, err = hashPassword(*req.Password)
+		if err != nil {
+			return nil, err
+		}
+		user.PasswordHash = hash
+	}
+
+	var newUser *entity.User
+	newUser, err = s.repo.Update(user)
 	if err != nil {
 		return nil, err
 	}
-	if user == nil {
-		return nil, ErrUserNotFound
-	}
-	return user, nil
+	return userToUserResponse(newUser), nil
 }
-
-func (s *UserService) Update()
