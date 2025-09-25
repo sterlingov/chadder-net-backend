@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/lib/pq"
@@ -47,7 +48,7 @@ func (r *userRepo) Create(user *entity.User) (int64, error) {
 }
 
 func (r *userRepo) getByField(field string, value any) (*entity.User, error) {
-	query := fmt.Sprintf("SELECT (id, username, name, bio, created_at, avatar) FROM users WHERE %s = $1", field)
+	query := fmt.Sprintf("SELECT id, username, name, bio, created_at, avatar FROM users WHERE %s = $1", field)
 
 	user := &entity.User{}
 	var bio sql.NullString
@@ -62,6 +63,9 @@ func (r *userRepo) getByField(field string, value any) (*entity.User, error) {
 		&avatar)
 
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, repository.ErrNotFound
+		}
 		return nil, err
 	}
 	user.Avatar = avatar.String
@@ -78,4 +82,36 @@ func (r *userRepo) GetByUsername(username string) (*entity.User, error) {
 	return r.getByField("username", username)
 }
 
-func (r *userRepo) Update(user *entity.User) (*entity.User, error)
+func (r *userRepo) Update(user *entity.User) (*entity.User, error) {
+	query := "UPDATE users SET username = $1, name = $2, email = $3, bio = $4, password_hash = $5, avatar = $6 WHERE id = $7 RETURNING id, username, name, email, bio, password_hash, avatar, created_at"
+
+	updated := &entity.User{}
+	var bio, avatar sql.NullString
+
+	err := r.db.QueryRow(query,
+		user.Username,
+		user.Name,
+		user.Email,
+		user.Bio,
+		user.PasswordHash,
+		user.Avatar,
+		user.ID,
+	).Scan(
+		&updated.ID,
+		&updated.Username,
+		&updated.Name,
+		&updated.Email,
+		&bio,
+		&updated.PasswordHash,
+		&avatar,
+		&updated.CreatedAt,
+	)
+
+	updated.Bio = bio.String
+	updated.Avatar = avatar.String
+
+	if err != nil {
+		return nil, err
+	}
+	return updated, nil
+}
